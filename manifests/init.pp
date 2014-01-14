@@ -49,15 +49,6 @@
 #     Fedora: https://mirror.openshift.com/pub/origin-server/release/2/fedora-19
 #     RHEL:   https://mirror.openshift.com/pub/origin-server/release/2/rhel-6
 #   Default: Fedora-19 Nightlies
-#
-# [*architecture*]
-#   CPU Architecture to use for the definition OpenShift Origin yum repositories
-#     Defaults to $::architecture
-#     Fedora:
-#       x86_64
-#       armv7hl
-#     RHEL:
-#       x86_64
 # 
 # [*override_install_repo*]
 #   Repository path override. Uses dependencies from repos_base but uses 
@@ -124,23 +115,7 @@
 # [*bind_krb_principal*]
 #   When the nameserver is remote, this Kerberos principal together with
 #   Kerberos keytab can be used instead of the HMAC-MD5 key for updates.
-#
-# [*aws_access_key_id*]
-#    This and the next value are Amazon AWS security credentials.
-#    The aws_access_key_id is a string which identifies an access credential.
-#
-#    http://docs.aws.amazon.com/AWSSecurityCredentials/1.0/AboutAWSCredentials.html#AccessCredentials.
-#
-# [*aws_secret_key*]
-#    This is the secret portion of AWS Access Credentials indicated by the
-#    aws_access_key_id
-#
-# [*aws_zone_id*]
-#   This is the ID string for an AWS Hosted zone which will contain the
-#   OpenShift application records.
-#
-#   http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html
-#
+#   
 # [*conf_named_upstream_dns*]
 #   List of upstream DNS servers to use when installing named on this node.
 #   Default: ['8.8.8.8']
@@ -246,10 +221,6 @@
 #                  bind_krb_principal for GSS_TSIG auth.
 #     * avahi    - sets up a MDNS based DNS resolution. Works only for 
 #                  all-in-one installations.
-#     * route53  - use AWS Route53 for dynamic DNS service.
-#                  Requires AWS key ID and secret and a delegated zone ID
-#     
-#
 # [*broker_auth_plugin*]
 #   Authentication setup for users of the OpenShift service.
 #   Options:
@@ -275,39 +246,6 @@
 #   URI to the LDAP server (e.g. ldap://ldap.example.com:389/ou=People,dc=my-domain,dc=com).
 #   Set <code>broker_auth_plugin</code> to <code>ldap</code> to enable
 #   this feature.
-#
-# [*node_shmmax*]
-#   kernel.shmmax sysctl setting for /etc/sysctl.conf
-#
-#   This setting should work for most deployments but if this is desired to be
-#   tuned higher, the general recommendations are as follows:
-#
-#    shmmax = shmall * PAGE_SIZE
-#       - PAGE_SIZE = getconf PAGE_SIZE
-#       - shmall = cat /proc/sys/kernel/shmall
-#
-#    shmmax is not recommended to be a value higher than 80% of total available
-#    RAM on the system (expressed in BYTES).
-#
-#   Defaults:
-#    64-bit:
-#      kernel.shmmax = 68719476736
-#    32-bit:
-#      kernel.shmmax = 33554432
-#
-# [*node_shmall*]
-#   kernel.shmall sysctl setting for /etc/sysctl.conf, this defaults to 
-#   2097152 BYTES
-#
-#   This parameter sets the total amount of shared memory pages that can be 
-#   used system wide. Hence, SHMALL should always be at least 
-#   ceil(shmmax/PAGE_SIZE). 
-#
-#   Defaults:
-#    64-bit:
-#      kernel.shmall = 4294967296
-#    32-bit:
-#      kernel.shmall = 2097152
 # 
 # [*node_container_plugin*]
 #   Specify the container type to use on the node.
@@ -352,46 +290,6 @@
 # [*register_host_with_named*]
 #   Setup DNS entries for this host in a locally installed bind DNS instance.
 #   Default: false
-#
-# [*dns_infrastructure_zone*]
-#   The name of a zone to create which will contain OpenShift infrastructure
-#
-#   If this is unset then no infrastructure zone or other artifacts will be
-#   created.
-
-#   Default: ''
-#
-# [*dns_infrastructure_key*]
-#   An HMAC-MD5 dnssec symmetric key which will grant update access to the
-#   infrastucture zone resource records.
-#
-#   This is ignored unless _dns_infrastructure_zone_ is set.
-#
-#   Default: ''
-#
-# [*dns_infrastructure_names*]
-#   An array of hashes containing hostname and IP Address pairs to populate
-#   the infrastructure zone.
-#
-#   This value is ignored unless _dns_infrastructure_zone_ is set.
-#
-#   Hostnames can be simple names or fully qualified domain name (FQDN).
-#
-#   Simple names will be placed in the _dns_infrastructure_zone_.
-#   Matching FQDNs will be placed in the _dns_infrastructure_zone.
-#   Hostnames anchored with a dot (.) will be added verbatim.
-# 
-#   Default: []
-#
-#   Example:
-#     $dns_infrastructure_names = [
-#       {hostname => '10.0.0.1', ipaddr => 'broker1'},
-#       {hostname => '10.0.0.2', ipaddr => 'data1'},
-#       {hostname => '10.0.0.3', ipaddr => 'message1'},
-#       {hostname => '10.0.0.11', ipaddr => 'node1'},       
-#       {hostname => '10.0.0.12', ipaddr => 'node2'},       
-#       {hostname => '10.0.0.13', ipaddr => 'node3'},       
-#     ]
 #
 # [*firewall_provider*]
 #   Select the firewall provider to configure OpenShift with.
@@ -459,13 +357,12 @@
 #    one node host to all the rest (or, if using the same image for all
 #    hosts, just keep the keys from the image).
 class openshift_origin (
-  $roles                                = ['broker','node','activemq','datastore','named'],
-  $install_method                       = 'yum',
+  $roles                                = ['broker','activemq','datastore','named'],
+  $install_method                       = 'none',
   $repos_base                           = $::operatingsystem ? {
                                             'Fedora' => 'https://mirror.openshift.com/pub/origin-server/nightly/fedora-19',
                                             default  => 'https://mirror.openshift.com/pub/origin-server/nightly/rhel-6',
                                           },
-  $architecture                         = undef,
   $override_install_repo                = undef,
   $os_repo                              = undef,
   $os_updates_repo                      = undef,
@@ -474,19 +371,14 @@ class openshift_origin (
   $optional_repo                        = undef,
   $domain                               = 'example.com',
   $broker_hostname                      = "broker.${domain}",
-  $node_hostname                        = "node.${domain}",
-  $named_hostname                       = "ns1.${domain}",
-  $activemq_hostname                    = "activemq.${domain}",
-  $datastore_hostname                   = "mongodb.${domain}",
-  $named_ip_addr                        = $ipaddress,
-  $bind_key                             = '',
-  $bind_krb_keytab                      = '',
-  $bind_krb_principal                   = '',
-  $aws_access_key_id                    = '',
-  $aws_secret_key                       = '',
-  $aws_zone_id                          = '',
-  $broker_ip_addr                       = $ipaddress,
-  $node_ip_addr                         = $ipaddress,
+  $named_hostname                       = "broker.${domain}",
+  $activemq_hostname                    = "broker.${domain}",
+  $datastore_hostname                   = "broker.${domain}",
+  $named_ip_addr                        = "192.168.100.143",
+  $bind_key                             = '5a0yUF+1x1ZO7tPoT9F8XsqixjdXk3ns6VDP8tuCQtrPRTs4LPgFGzLeX1Q3RQoCBzIdNMYvuS2M0m3DN3gfXA==',
+#  $bind_krb_keytab                      = '',
+#  $bind_krb_principal                   = '',
+  $broker_ip_addr                       = "192.168.100.143",
   $configure_ntp                        = true,  
   $activemq_admin_password              = inline_template('<%= require "securerandom"; SecureRandom.base64 %>'),
   $mcollective_user                     = 'mcollective',
@@ -509,24 +401,19 @@ class openshift_origin (
   $conf_default_gear_size               = 'small',
   $broker_dns_plugin                    = 'nsupdate',
   $broker_auth_plugin                   = 'htpasswd',
-  $broker_krb_service_name              = '',
-  $broker_krb_auth_realms               = '',
-  $broker_krb_keytab                    = '',
-  $broker_ldap_uri                      = '',
-  $node_shmmax                          = undef,
-  $node_shmall                          = undef,
-  $node_container_plugin                = 'selinux',
-  $node_frontend_plugins                = ['apache-mod-rewrite','nodejs-websocket'],
-  $node_unmanaged_users                 = [],
-  $conf_node_external_eth_dev           = 'eth0',
-  $conf_node_supplementary_posix_groups = '',
+#  $broker_krb_service_name              = '',
+#  $broker_krb_auth_realms               = '',
+#  $broker_krb_keytab                    = '',
+#  $broker_ldap_uri                      = '',
+#  $node_container_plugin                = 'selinux',
+#  $node_frontend_plugins                = ['apache-mod-rewrite','nodejs-websocket'],
+#  $node_unmanaged_users                 = [root],
+#  $conf_node_external_eth_dev           = 'eth0',
+#  $conf_node_supplementary_posix_groups = '',
   $development_mode                     = false,
   $conf_named_upstream_dns              = ['8.8.8.8'],
   $install_login_shell                  = false,
   $register_host_with_named             = false,
-  $dns_infrastructure_zone              = '',
-  $dns_infrastructure_key               = '',
-  $dns_infrastructure_names             = [],
   $firewall_provider                    = 'iptables',
   $install_cartridges                   = ['10gen-mms-agent','cron','diy','haproxy','mongodb',
                                            'nodejs','perl','php','phpmyadmin','postgresql',
@@ -555,22 +442,4 @@ class openshift_origin (
       enable => true,
     }
   }
-  $node_shmmax_default = $::architecture ? {
-    'x86_64' => 68719476736,
-    default  => 33554432,
-  }
-  $_node_shmmax = $node_shmax ? {
-    undef   => $node_shmmax_default,
-    default => $node_shmmax,
-  }
-
-  $node_shmall_default = $::architecture ? {
-    'x86_64' => 4294967296,
-    default  => 2097152,
-  }
-  $_node_shmall = $node_shmall ? {
-    undef   => $node_shmall_default,
-    default => $node_shmall,
-  }
-
 }
